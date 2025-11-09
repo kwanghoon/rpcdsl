@@ -8,10 +8,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeApplications #-}
 module PolyRPC.Handle where
 
 import GHC.TypeLits
 import Data.Kind (Constraint)
+import Data.Proxy (Proxy(Proxy))
 
 -- | Locations in the system (kind-level)
 data Loc = Client | Server | Worker Symbol
@@ -57,11 +59,19 @@ data SomeHandle where
   SomeHandle :: SLoc l -> Handle l -> SomeHandle
 
 -- | Spawn a new context at location l' and get its handle.
+-- The SLoc l' parameter ensures type-level consistency between 
+-- the singleton location and the returned handle's type parameter.
 spawn
-  :: forall l l'. SLoc l'   -- where to spawn
-  -> String                  -- image/binary/options (demo only)
-  -> RPC l (Handle l')
-spawn _ _ = RPC (pure (Handle "ep-001"))
+  :: forall l l'. SLoc l'   -- where to spawn (singleton witness)
+  -> String                 -- image/binary/options (demo only)  
+  -> RPC l (Handle l')     -- handle typed with same location l'
+spawn sloc opts = RPC (pure (Handle (endpointForLocation sloc opts)))
+
+-- | Generate endpoint ID based on location type (demo implementation)
+endpointForLocation :: SLoc l -> String -> String
+endpointForLocation SClient opts = "client-" ++ opts
+endpointForLocation SServer opts = "server-" ++ opts  
+endpointForLocation (SWorker @w) opts = "worker-" ++ symbolVal (Proxy @w) ++ "-" ++ opts
 
 -- | Call using a handle; the handle's location fixes the destination.
 callH
