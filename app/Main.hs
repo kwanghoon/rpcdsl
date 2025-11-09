@@ -16,9 +16,9 @@ main = do
   putStrLn ("Result = " ++ show r)
 
 -- Client program: spawn a server handle, then call via handle.
-client :: RPC 'Client Int
+client :: RPC 'Server Int
 client = do
-  hS <- spawn SClient "srv-img"
+  hS <- spawn SServer "srv-img"
   -- Library style
   x  <- callH hS incS 41
   -- QuasiQuoter style:  [$rpc| at hS { incS 41 } |]  ≡  callH hS incS 41
