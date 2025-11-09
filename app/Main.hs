@@ -18,7 +18,7 @@ main = do
 -- Client program: spawn a server handle, then call via handle.
 client :: RPC 'Client Int
 client = do
-  hS <- spawn SServer "srv-img"
+  hS <- spawn SClient "srv-img"
   -- Library style
   x  <- callH hS incS 41
   -- QuasiQuoter style:  [$rpc| at hS { incS 41 } |]  ≡  callH hS incS 41
@@ -62,4 +62,42 @@ app\Main.hs:25:14: error:
    |
 25 |   y  <- [rpc| at hS { incS 41 } |]
 
+-}
+
+{-
+For a client spawn
+
+  hS <- spawn SClient "srv-img"
+
+the Haskell typechecker will produce errors.
+
+app\Main.hs:23:18: error:
+    * Couldn't match type 'Server with 'Client
+      Expected: Int -> RPC 'Client Int
+        Actual: Int -> RPC 'Server Int
+    * In the second argument of `callH', namely `incS'
+      In a stmt of a 'do' block: x <- callH hS incS 41
+      In the expression:
+        do hS <- spawn SClient "srv-img"
+           x <- callH hS incS 41
+           y <- (((callH hS) incS) 41)
+           pure y
+   |
+23 |   x  <- callH hS incS 41
+   |                  ^^^^
+
+app\Main.hs:25:14: error:
+    * Couldn't match type 'Server with 'Client
+      Expected: Int -> RPC 'Client Int
+        Actual: Int -> RPC 'Server Int
+    * In the second argument of `callH', namely `incS'
+      In a stmt of a 'do' block: y <- (((callH hS) incS) 41)
+      In the expression:
+        do hS <- spawn SClient "srv-img"
+           x <- callH hS incS 41
+           y <- (((callH hS) incS) 41)
+           pure y
+   |
+25 |   y  <- [rpc| at hS { incS 41 } |]
+   |              ^^^^^^^^^^^^^^^^^^^^^
 -}
